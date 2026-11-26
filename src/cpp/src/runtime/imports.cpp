@@ -134,7 +134,7 @@ Result<std::uint16_t> ImportRegistry::resolve(const std::string& module, const s
         "imports", 2, "import '" + name + "' version too old (have " +
                           std::to_string(it->second) + ", need " + std::to_string(minVersion) + ")"));
   }
-  return Result<std::uint16_t>::ok(it->second);
+  return Result<std::uint16_t>::success(it->second);
 }
 
 }  // namespace sb

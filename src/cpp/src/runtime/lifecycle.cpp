@@ -42,7 +42,7 @@ Result<void> Lifecycle::transition(RuntimeState to, const std::string& reason) {
   state_ = to;
   reason_ = reason;
   history_.emplace_back(to, reason);
-  return Result<void>::ok();
+  return Result<void>::success();
 }
 
 }  // namespace sb

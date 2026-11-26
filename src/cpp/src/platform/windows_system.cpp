@@ -49,7 +49,7 @@ Result<SystemReport> collect() {
   r.cpuModel = "non-Windows build (info only)";
   r.osVersion = "non-Windows build";
 #endif
-  return Result<SystemReport>::ok(std::move(r));
+  return Result<SystemReport>::success(std::move(r));
 }
 
 }  // namespace sysinfo

@@ -27,7 +27,7 @@ Result<void*> MemoryService::allocate(std::size_t bytes) {
 #endif
   if (!p) return Result<void*>::fail(Error::make("memory", 3, "host allocation failed"));
   allocated_ += bytes;
-  return Result<void*>::ok(p);
+  return Result<void*>::success(p);
 }
 
 void MemoryService::release(void* p, std::size_t bytes) {
@@ -91,7 +91,7 @@ Result<std::vector<std::uint8_t>> ReadOnlyFileService::readFile(const std::strin
     out.insert(out.end(), buf, buf + got);
     total += got;
   }
-  return Result<std::vector<std::uint8_t>>::ok(std::move(out));
+  return Result<std::vector<std::uint8_t>>::success(std::move(out));
 }
 
 }  // namespace services

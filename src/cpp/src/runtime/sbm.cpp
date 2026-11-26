@@ -41,7 +41,7 @@ Result<Module> parse(const std::uint8_t* data, std::size_t len) {
   if (!code.ok()) return Result<Module>::fail(code.error());
   const std::string& cs = code.value();
   m.code.assign(cs.begin(), cs.end());
-  return Result<Module>::ok(std::move(m));
+  return Result<Module>::success(std::move(m));
 }
 
 Result<std::vector<std::uint8_t>> write(const std::vector<Import>& imports,
@@ -71,7 +71,7 @@ Result<std::vector<std::uint8_t>> write(const std::vector<Import>& imports,
   }
   push32(static_cast<std::uint32_t>(code.size()));
   out.insert(out.end(), code.begin(), code.end());
-  return Result<std::vector<std::uint8_t>>::ok(std::move(out));
+  return Result<std::vector<std::uint8_t>>::success(std::move(out));
 }
 
 }  // namespace sbm

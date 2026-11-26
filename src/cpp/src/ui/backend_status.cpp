@@ -335,7 +335,7 @@ Result<void> exportTextOutsideRepo(const std::string& path, const std::string& t
   if (!f) return Result<void>::fail(Error::make("export", 3, "cannot open export file"));
   f << text;
   if (!f) return Result<void>::fail(Error::make("export", 4, "export write failed"));
-  return Result<void>::ok();
+  return Result<void>::success();
 }
 
 std::string nullCensusLine(const diag::NullCensus& c) {
