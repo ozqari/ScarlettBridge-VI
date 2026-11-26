@@ -1,0 +1,2 @@
+original_repository,sha,source_path,license,destination_path,reuse_type,notes
+(none reused),,,,,,Live audit completed 2026-11-26 (see REPO_AUDIT.md). src/cpp/* are original independent implementations under MIT (see src/cpp/LICENSE); no upstream file was copied or translated, so no per-file reuse rows exist. Add a row here before any copied/ported file lands.

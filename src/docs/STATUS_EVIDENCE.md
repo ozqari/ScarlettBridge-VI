@@ -1,0 +1,67 @@
+# STATUS_EVIDENCE.md — truthful status (evidence levels per brief 12.5)
+
+## A. This workspace (browser-verified by us)
+
+| Area | Level | Evidence |
+|---|---|---|
+| Web GUI shell (9 pages, dark theme, nav, top bar, 1280x720 to 4K) | 3 Synthetic verified (browser) | page_refresh + snapshot checks; nav, persistence, crash tests |
+| Settings schema parse, migrate, invalid | 3 | Self-test in Benchmark page (7/7 pass 2026-11-26) |
+| WebGL2 device creation + adapter params | 3–4 (this browser) | GPU probe returns renderer, vendor, max-texture, offscreen-triangle pixel hash (4/4 pass) |
+| IPC message round-trip + version check + oversize reject | 3 | Fuzz and round-trip self-tests |
+| Simulated runtime Start, Stop, Crash | 3 | Lifecycle machine test; UI stays alive on crash |
+| Folder validator (read-only, capped) | 3 | Local scan only; never writes source dir |
+| D3D12, WARP, DXC native tests | 0 Not implemented here | Requires Windows + SDK; marked DISABLED in UI |
+| Module loader, ABI, platform services | 0–1 | Stubs documented as unsupported; no fake success |
+| Target startup, world render, controllable, sustained, playable | 0 | No commercial content present; never claimed |
+
+## C. C++ tree `src/cpp` (written, NOT yet compiled — no Windows toolchain here)
+
+| Area | Level | Evidence |
+|---|---|---|
+| C++ skeleton (CMake/presets/core/IPC/runtime/graphics/tools/tests/Qt shell) | 1 Implemented (code exists) | Source present; Windows build + `ctest` NOT yet run. Must be recorded before further C++ work. |
+| Increment 2: HostPolicy/census/stub modes, pipe publish, SEH crash filter, Qt live client, GPU timestamps, skip-77, +14 unit checks | 1 Implemented (code exists) | Same build caveat. Ideas sourced from re-read architecture/AGENTS/third-party docs (see CHANGELOG); code is independent. |
+| Increment 3: pattern HostPolicy + HLE table + censusDll, StubDatabase, LastOutputRing + module+RVA + crash-log guard, ensureOutsideRepo wired into cache/probe/crash paths, +~20 unit checks | 1 Implemented (code exists) | Same build caveat. Behavior informed by reading upstream CODE (policy/host/registry/census/stub/routing/import-reader/loader files, see CHANGELOG); code is independent, no copying. |
+| Increment 4: synthetic PE import census + `pe-census` CLI, TitleManifest + ImageRegistry, FaultBudget quotas, portable adapter chooser, +~25 unit checks | 1 Implemented (code exists) | Same build caveat. Behavior informed by reading more upstream CODE (PeImage/ImportClassifier/FaultReporter/resolver/loader/shim/adapter/main files, see CHANGELOG); code is independent, no copying. |
+| Increment 5: dry-run resolver log (Source + records + GetProcAddress/LoadLibrary contracts), trace throttle + filter, cache key v2 + warm, System32-only host guard, console-timer policy, +~30 unit checks | 1 Implemented (code exists) | Same build caveat. Behavior informed by reading resolver remainder + runtime/host/timers + shader-cache warm + FirstQuery + thunk-scanner files (see CHANGELOG); code is independent, no copying. |
+| Increment 6: PE export census + `pe-exports` CLI, forwarder chains (depth 8, dotted DLLs), image-layout validation (protections/containment/relocs/TLS), PeSection characteristics, +~40 unit checks | 1 Implemented (code exists) | Same build caveat. Behavior informed by reading loader/exports/forwarder/layout/report/routing code (see CHANGELOG); code is independent, no copying. |
+| Increment 7: HLE route table (alias-first glob routes, cross-module find-any, export uniqueness) + init order (deps-first, cycle-safe) + binding counts + run-mode guard, +~30 unit checks | 1 Implemented (code exists) | Same build caveat. Behavior informed by reading HLE registry/routing/loader-order/run-mode code (see CHANGELOG); code is independent, no copying. |
+| Increment 8: Qt shell wired to real portable backends (`sb_ui_support`: versions, read-only folder scan, system/gamepad/audio/adapter/fingerprint lines) + dashboard lifecycle, setup scan, diagnostics ring, controls enumeration, in-process benchmark skips, synthetic crash report, +9 unit checks | 1 Implemented (code exists) | Same build caveat. No upstream code copied; GUI and helper are independent. |
+| Increment 9: full schema-v3 graphics settings editor (all fields, Reload/Save/Defaults, validator round-trip warnings, save counter) + option/validator/summary helpers, +6 unit checks | 1 Implemented (code exists) | Same build caveat. No upstream code copied. |
+| Increment 10: filterable diagnostics/logs (case-insensitive filter, capped views) + redacted JSON/text export guarded by ensureOutsideRepo + helpers, +8 unit checks | 1 Implemented (code exists) | Same build caveat. No upstream code copied. |
+| Increment 11: refusal census (null-cause classification + NullCensus sums + bounded 128-pair per-reason table with sanitized reasons, detail budget, delta reports, overflow) from newly read startup-runtime + stub headers, +~20 unit checks | 1 Implemented (code exists) | Same build caveat. Behavior informed by reading Xbox2Windows null_binding_cause.h + per_reason_refusal_census.h + startup-runtime.md (plus pipeline-cache/host/pipeline reads, refused as too coupled); code is independent, no copying. |
+| Increment 12: GUI surfaces the refusal census in Diagnostics (shell-owned real NullCensus + PerReasonCensus, portable summary/detail helpers, honest zero note, filter applies to detail lines), +10 unit checks | 1 Implemented (code exists) | Same build caveat. No upstream code copied; helpers and wiring are independent. |
+| Increment 13: frame-rate summary box from newly read victory-fork fpsbox (tenths rate+MS text, fit-to-width, six fixed-width lines blank-when-missing, Off/Rate/All mode parse, bottleneck rule) +9 other code files read and refused/noted, +49 unit checks | 1 Implemented (code exists) | Same build caveat. Behavior informed by reading fpsbox.rs (plus drvwatch/config/logging/query/inspect/cli/fence/api_trace/call_evidence reads, refused or queued as documented); code is independent, no copying. |
+| Increment 14: Shader Manager shows real cache stats (read-only entry/byte counts vs budgets from settings file, disabled-honest, refresh counted/traced), +8 unit checks | 1 Implemented (code exists) | Same build caveat. No upstream code copied; helpers and wiring are independent. |
+| Increment 15: strict CLI parsing from newly read XCL config + Xbox2Windows headers (sb_cli Parser lib; cli + runtime reject unknown/stray/missing/malformed instead of silent ignore), +19 unit checks | 1 Implemented (code exists) | Same build caveat. Behavior informed by reading config.rs/run.rs/shader.rs/export_write_mask/command_signature_filter/console_mode/file_lock/draw_dump_tracking (+ already-read XCL cli.rs); code is independent, no copying. |
+| Increment 16: Benchmark surfaces the frame-rate box honestly (portable smokeRateLine: one-shot draw → frameRateMsText, always labelled single-sample, unusable draws report no-sample; smokeBottleneckLine stays unknown; Qt page shows rate on success, no-sample on every SKIP/FAILED path), +10 unit checks | 1 Implemented (code exists) | Same build caveat. No upstream code copied; helpers and wiring are independent. |
+| Increment 17: adapter selector from newly read XCL adapter.rs + tests (Auto/Warp/Index/Name parse, digit-boundary model tokens, out-of-range numeric → token fallback; chooseAdapter preserved on historical cases), +26 unit checks | 1 Implemented (code exists) | Same build caveat. Behavior informed by reading adapter.rs/adapter_tests.rs (+ eh/stats/framelog/translate/local_log/resource_budget/input_script reads, refused or noted as documented); code is independent, no copying. |
+| Increment 18: GUI shows what the adapter text selects (portable describeSelector wording; live Selects hint on the graphics page on every keystroke + load/save/defaults), +5 unit checks | 1 Implemented (code exists) | Same build caveat. No upstream code copied; helper and wiring are independent. |
+| Increment 19: scripted gamepad input from newly read upstream test contracts (portable parse/play: exact rejection strings, 256 cap, relative times, base rule; waits/marks/groups refused as presenter-coupled), +33 unit checks | 1 Implemented (code exists) | Same build caveat. Behavior informed by reading startup_gameinput_script*.cpp (+ copystat.rs refused as title/GPU-coupled); code is independent, no copying. |
+| Increment 20: Controls page surfaces the increment-19 scripted input (portable summary/state/detail helpers; Qt script box + Parse + DEMO playback at the synthetic tick; live poll stays Unsupported), +9 unit checks | 1 Implemented (code exists) | Same build caveat. No upstream code copied; helpers and wiring are independent. |
+| Increment 21: engine-counter aggregation from newly read victory-fork stats.rs (portable parseEngineInstance + busiestEngineKind on caller-supplied samples; PDH/thread/OS collection refused), +10 unit checks | 1 Implemented (code exists) | Same build caveat. Behavior informed by reading stats.rs FULL (+ translate.rs Tally and api_trace.h read, queued/noted); code is independent, no copying. |
+| Increment 22: Diagnostics page probes engine-instance names (portable engineInstanceLine; live result per keystroke; no live figures claimed), +4 unit checks | 1 Implemented (code exists) | Same build caveat. No upstream code copied; helper and wiring are independent. |
+| Increment 23: shader failure tally from re-read victory-fork translate.rs (portable FailTally: first-example-wins, merge sums, sorted list lines, most-frequent-first width-7 report; stage counters refused), +13 unit checks | 1 Implemented (code exists) | Same build caveat. Behavior informed by reading the Tally fail/merge/report contract in full; code is independent, no copying. |
+| Increment 24: Setup page exports the scan report (portable folderReportText; redacted text via the guarded outside-repo export; no-scan/in-tree refusals honest), +6 unit checks | 1 Implemented (code exists) | Same build caveat. Report-for-reading behavior informed by reading exe-intake.md + the non-windows-hosts evidence sections; code is independent, no copying. |
+| Increment 25: declared-output compare from re-read api_trace.h (portable decideCompare + formatCompare: Unknown/Unreadable/Same/Changed + partial, caller arg numbers, 64-byte bound; provider table refused), +17 unit checks | 1 Implemented (code exists) | Same build caveat. Behavior informed by reading the decide/format contract in full (+ non-windows-hosts comparison discipline); code is independent, no copying. |
+| Increment 26: GUI surfaces the shader failure tally (shell-owned real FailTally + portable failTallyLine/failTallyReportLines, summary + up to 8 report lines, honest zero note, same Refresh button; batch run stays unimplemented), +7 unit checks | 1 Implemented (code exists) | Same build caveat. No upstream code copied; helpers and wiring are independent. |
+| Increment 27: driver-error trip latch from re-read victory-fork drvwatch.rs (portable DriverWatch: every noteError counted, first trips for the run; EventLog subscription refused), +9 unit checks | 1 Implemented (code exists) | Same build caveat. Behavior informed by reading seen/tripped/errors + the trip test in full; code is independent, no copying. |
+| Release workflow (`src/tools/github-release/`: tag → build+test+package+publish, dispatch dry-run; YAML-parse validated) | 1 Implemented (file exists) | No Actions run observed yet — first green log URL must be recorded here before any release is treated as verified. |
+| Everything downstream (device creation, WARP smoke, DXC, loader runs) | 0 | Code paths exist but no build log exists. |
+
+## B. Upstream self-reports (their READMEs, fetched live 2026-11-26 — NOT our verification)
+
+| Project (pinned SHA) | Self-reported stage | Numbers they claim (their measurement, their hardware) |
+|---|---|---|
+| VIctory `63bcca4` | Boots, menus, world load, intro cutscene, reaches prologue; not playable | ~1 world fps; menus at title's 30 fps |
+| victory-fork `ceb9e1f` | "Playable, slowly" | 8–9.5 world fps (first boat mission, console 30), 10–14 elsewhere |
+| AnyXboxX `8ed1109` | Launches 1.0.2.1, menus, world | ~14 world fps, RTX 4070 SUPER, measured 2026-11-25 |
+| flamingo `d50d254` | Boot, menus, cutscenes | 9–10 fps handoff note, RTX 4070 |
+| VItoriaBr `1361e19` | 3D open world live, controllable, HUD/subtitles; occasional world-transition crashes | up to ~6 fps, RTX 5060 Ti; 30 fps menus |
+| ScarlettPort `f4fe7c9` | Boots → world → gameplay, not yet verified playable | ~5.4 fps walking/turning, RTX 3060, Series S profile |
+| XCL `b49be18` | Newer retail title ~60% to playable (estimate) | ~4 s first frame, 30 fps menus, ~5 fps world, 100% shaders translate |
+| five-star-recomp `cfeea34` | Loader/startup/first-run via scripted gamepad | No fps claimed |
+| Xbox2Windows `8c9f168` | Original-exe startup, menus, gameplay: explicitly unverified | BVH checks 408-pass (RTX 2060, 4070 Ti SUPER) — CPU/GPU unit scope only |
+| ProjectReCity `b18d473` | Pre-boot; no pipelines/draws/present | No fps claimed |
+| Trackers | gtapcport: none meets its Playable stage; UFD: one unlogged ~2 fps contributor report; race: 15-min checks, fps bands | As shown on their pages, 2026-11-26 |
+
+Rule: section B must never be quoted as our verification. Our README and GUI repeat only section A as verified fact.
