@@ -1,0 +1,16 @@
+{
+  "schema": 3,
+  "adapter": "auto",
+  "backend": "d3d12",
+  "windowMode": "windowed",
+  "resolution": "1280x720",
+  "vsync": true,
+  "frameCap": 60,
+  "texBudgetMB": 2048,
+  "shaderCache": true,
+  "cacheMB": 512,
+  "cachePath": "%LOCALAPPDATA%/scarlettbridge/shader-cache",
+  "precompile": false,
+  "debugLayer": false,
+  "dred": false
+}
