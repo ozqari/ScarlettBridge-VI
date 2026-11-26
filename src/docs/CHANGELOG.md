@@ -1,5 +1,23 @@
 # CHANGELOG.md
 
+## 2026-11-26 — Build fix: `Result` C2686 (release workflow red → root-caused)
+
+- Root cause: `src/cpp/src/core/result.h` declared `static Result ok(...)`
+- alongside `bool ok() const`. Same name + same (empty) parameter list for
+- the `Result<void>` specialization is illegal (MSVC C2686) and poisoned
+- every TU (`bounded_reader.h`, `json.h`, `filesystem_guards.h`,
+- `config.h`, ...). The primary template's `map()` also used `f(value_)`
+- in its trailing return type, which MSVC could not resolve.
+- Fix: success factory renamed `ok` → `success` (`Result<T>::success(v)`,
+- `Result<void>::success()`; instance predicate stays `bool ok() const`);
+- all 70 `::ok(` factory call sites updated across 22 files (verified zero
+- `::ok(` remain). `map()` now deduces via `declval` and handles
+- void-returning callables with `if constexpr`.
+- Also: `json.cpp` `\u` printf arg now explicitly `unsigned` (W4/WX-safe).
+- LIMITATION: still not compiled here (no MSVC/SDK in this workspace).
+- CI must re-run (`ci` preset / release workflow); if it goes red again,
+- paste the new log — likely a *different*, later error, not this one.
+
 ## 2026-11-26 — Automatic release workflow (`src/tools/github-release/`)
 
 - New: `src/tools/github-release/release.yml` (installs to
