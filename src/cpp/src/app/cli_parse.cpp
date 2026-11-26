@@ -15,7 +15,7 @@ bool Parser::atEnd() const { return index_ >= args_.size(); }
 Result<std::string> Parser::value(const std::string& name) {
   if (index_ >= args_.size() || args_[index_].rfind("--", 0) == 0)
     return Result<std::string>::fail(Error::make("cli", 1, name + " needs a value"));
-  return Result<std::string>::ok(args_[index_++]);
+  return Result<std::string>::success(args_[index_++]);
 }
 
 Result<std::uint64_t> Parser::parseU64(const std::string& name) {
@@ -28,7 +28,7 @@ Result<std::uint64_t> Parser::parseU64(const std::string& name) {
       return Result<std::uint64_t>::fail(Error::make("cli", 2, "invalid value for " + name + ": " + s));
   }
   try {
-    return Result<std::uint64_t>::ok(std::stoull(s));
+    return Result<std::uint64_t>::success(std::stoull(s));
   } catch (...) {
     return Result<std::uint64_t>::fail(Error::make("cli", 2, "invalid value for " + name + ": " + s));
   }
@@ -37,8 +37,8 @@ Result<std::uint64_t> Parser::parseU64(const std::string& name) {
 Result<bool> Parser::parseBool01(const std::string& name) {
   auto v = value(name);
   if (!v.ok()) return Result<bool>::fail(v.error());
-  if (v.value() == "0") return Result<bool>::ok(false);
-  if (v.value() == "1") return Result<bool>::ok(true);
+  if (v.value() == "0") return Result<bool>::success(false);
+  if (v.value() == "1") return Result<bool>::success(true);
   return Result<bool>::fail(
       Error::make("cli", 3, "invalid value for " + name + ": " + v.value() + " (expected 0 or 1)"));
 }
@@ -72,7 +72,7 @@ Result<std::uint64_t> Parser::parseHexU64Str(const std::string& s) {
     }
   }
   try {
-    return Result<std::uint64_t>::ok(std::stoull(hex, nullptr, 16));
+    return Result<std::uint64_t>::success(std::stoull(hex, nullptr, 16));
   } catch (...) {
     return Result<std::uint64_t>::fail(
         Error::make("cli", 5, "\"" + s + "\" is not a 1-16 digit hexadecimal value"));

@@ -113,13 +113,13 @@ Result<SettingsLoad> loadFile(const std::string& path) {
     SettingsLoad out;
     out.settings = defaults();
     out.warnings.push_back("config: file not found, using defaults");
-    return Result<SettingsLoad>::ok(std::move(out));
+    return Result<SettingsLoad>::success(std::move(out));
   }
   std::ostringstream ss;
   ss << f.rdbuf();
   Result<json::Value> v = json::Value::parse(ss.str());
   if (!v.ok()) return Result<SettingsLoad>::fail(v.error());
-  return Result<SettingsLoad>::ok(fromJson(v.value()));
+  return Result<SettingsLoad>::success(fromJson(v.value()));
 }
 
 Result<void> saveFile(const std::string& path, const Settings& s) {
@@ -130,7 +130,7 @@ Result<void> saveFile(const std::string& path, const Settings& s) {
   if (!f) return Result<void>::fail(Error::make("config", 2, "cannot open config file for write"));
   f << toJson(s).serialize();
   if (!f) return Result<void>::fail(Error::make("config", 3, "config write failed"));
-  return Result<void>::ok();
+  return Result<void>::success();
 }
 
 }  // namespace sb

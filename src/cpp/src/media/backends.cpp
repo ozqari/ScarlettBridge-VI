@@ -21,7 +21,7 @@ class WindowsAudio : public IAudioBackend {
     d.id = "default";
     d.name = "System default output (WASAPI enumeration pending)";
     d.isDefault = true;
-    return Result<std::vector<DeviceInfo>>::ok(std::vector<DeviceInfo>{d});
+    return Result<std::vector<DeviceInfo>>::success(std::vector<DeviceInfo>{d});
 #else
     return Result<std::vector<DeviceInfo>>::fail(
         Error::make("audio", 1, "audio enumeration is Windows-only"));
@@ -35,7 +35,7 @@ class WindowsAudio : public IAudioBackend {
 }  // namespace
 Result<IAudioBackend*> windowsBackend() {
   static WindowsAudio instance;
-  return Result<IAudioBackend*>::ok(&instance);
+  return Result<IAudioBackend*>::success(&instance);
 }
 }  // namespace audio
 
@@ -56,7 +56,7 @@ class WindowsInput : public IInputBackend {
         out.push_back(g);
       }
     }
-    return Result<std::vector<GamepadInfo>>::ok(std::move(out));
+    return Result<std::vector<GamepadInfo>>::success(std::move(out));
 #else
     return Result<std::vector<GamepadInfo>>::fail(
         Error::make("input", 1, "gamepad enumeration is Windows-only"));
@@ -70,7 +70,7 @@ class WindowsInput : public IInputBackend {
 }  // namespace
 Result<IInputBackend*> windowsBackend() {
   static WindowsInput instance;
-  return Result<IInputBackend*>::ok(&instance);
+  return Result<IInputBackend*>::success(&instance);
 }
 }  // namespace input
 }  // namespace sb

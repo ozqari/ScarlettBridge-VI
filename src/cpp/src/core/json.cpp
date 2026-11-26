@@ -46,7 +46,8 @@ void escapeInto(const std::string& s, std::string& out) {
       default:
         if (static_cast<unsigned char>(c) < 0x20) {
           char buf[8];
-          std::snprintf(buf, sizeof(buf), "\\u%04x", c);
+          std::snprintf(buf, sizeof(buf), "\\u%04x",
+                          static_cast<unsigned>(static_cast<unsigned char>(c)));
           out += buf;
         } else {
           out.push_back(c);
@@ -127,7 +128,7 @@ class Parser {
     ++pos_;
     Value obj = Value::object();
     skipWs();
-    if (pos_ < t_.size() && t_[pos_] == '}') { ++pos_; return Result<Value>::ok(std::move(obj)); }
+    if (pos_ < t_.size() && t_[pos_] == '}') { ++pos_; return Result<Value>::success(std::move(obj)); }
     while (true) {
       skipWs();
       if (pos_ >= t_.size() || t_[pos_] != '"')
@@ -144,7 +145,7 @@ class Parser {
       obj.set(key.value(), std::move(val.value()));
       skipWs();
       if (pos_ >= t_.size()) return Result<Value>::fail(Error::make("json", 7, "unterminated object"));
-      if (t_[pos_] == '}') { ++pos_; return Result<Value>::ok(std::move(obj)); }
+      if (t_[pos_] == '}') { ++pos_; return Result<Value>::success(std::move(obj)); }
       if (t_[pos_] != ',') return Result<Value>::fail(Error::make("json", 8, "expected ',' or '}'"));
       ++pos_;
     }
@@ -153,7 +154,7 @@ class Parser {
     ++pos_;
     Value arr = Value::array();
     skipWs();
-    if (pos_ < t_.size() && t_[pos_] == ']') { ++pos_; return Result<Value>::ok(std::move(arr)); }
+    if (pos_ < t_.size() && t_[pos_] == ']') { ++pos_; return Result<Value>::success(std::move(arr)); }
     while (true) {
       skipWs();
       Result<Value> val = parseValue(depth + 1);
@@ -163,7 +164,7 @@ class Parser {
         return Result<Value>::fail(Error::make("json", 9, "array too large"));
       skipWs();
       if (pos_ >= t_.size()) return Result<Value>::fail(Error::make("json", 10, "unterminated array"));
-      if (t_[pos_] == ']') { ++pos_; return Result<Value>::ok(std::move(arr)); }
+      if (t_[pos_] == ']') { ++pos_; return Result<Value>::success(std::move(arr)); }
       if (t_[pos_] != ',') return Result<Value>::fail(Error::make("json", 11, "expected ',' or ']'"));
       ++pos_;
     }
@@ -176,7 +177,7 @@ class Parser {
       if (c == '"') {
         if (out.size() > 1024u * 1024u)
           return Result<std::string>::fail(Error::make("json", 12, "string too large"));
-        return Result<std::string>::ok(std::move(out));
+        return Result<std::string>::success(std::move(out));
       }
       if (c == '\\') {
         if (pos_ >= t_.size()) break;
@@ -222,9 +223,9 @@ class Parser {
     return Result<std::string>::fail(Error::make("json", 16, "unterminated string"));
   }
   Result<Value> parseLiteral() {
-    if (t_.compare(pos_, 4, "true") == 0) { pos_ += 4; return Result<Value>::ok(Value::boolean(true)); }
-    if (t_.compare(pos_, 5, "false") == 0) { pos_ += 5; return Result<Value>::ok(Value::boolean(false)); }
-    if (t_.compare(pos_, 4, "null") == 0) { pos_ += 4; return Result<Value>::ok(Value::null()); }
+    if (t_.compare(pos_, 4, "true") == 0) { pos_ += 4; return Result<Value>::success(Value::boolean(true)); }
+    if (t_.compare(pos_, 5, "false") == 0) { pos_ += 5; return Result<Value>::success(Value::boolean(false)); }
+    if (t_.compare(pos_, 4, "null") == 0) { pos_ += 4; return Result<Value>::success(Value::null()); }
     return Result<Value>::fail(Error::make("json", 17, "bad literal"));
   }
   Result<Value> parseNumber() {
@@ -242,7 +243,7 @@ class Parser {
     }
     try {
       double d = std::stod(t_.substr(start, pos_ - start));
-      return Result<Value>::ok(Value::number(d));
+      return Result<Value>::success(Value::number(d));
     } catch (...) {
       return Result<Value>::fail(Error::make("json", 18, "bad number"));
     }

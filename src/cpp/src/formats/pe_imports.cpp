@@ -230,7 +230,7 @@ Result<PeSummary> parseImports(const std::uint8_t* data, std::size_t len) {
       }
     }
   }
-  return Result<PeSummary>::ok(std::move(out));
+  return Result<PeSummary>::success(std::move(out));
 }
 
 }  // namespace pe

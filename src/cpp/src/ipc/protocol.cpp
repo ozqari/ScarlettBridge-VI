@@ -36,7 +36,7 @@ Result<void> validate(const json::Value& msg) {
     for (const char* k : nums)
       if (!hasNum(msg, k))
         return Result<void>::fail(Error::make("ipc", 5, "missing numeric field '" + std::string(k) + "' in " + type));
-    return Result<void>::ok();
+    return Result<void>::success();
   };
   if (type == "Hello") return need({"build"}, {});
   if (type == "HelloAck") return need({"build"}, {});
@@ -46,7 +46,7 @@ Result<void> validate(const json::Value& msg) {
   if (type == "ShaderEvent") return need({"hash", "stage", "status"}, {"ms"});
   if (type == "FrameStats") return need({}, {"cpuMs", "gpuMs"});
   if (type == "DeviceLost") return need({"reason"}, {});
-  return Result<void>::ok();
+  return Result<void>::success();
 }
 
 json::Value hello(const std::string& buildId) {
@@ -75,7 +75,7 @@ Result<std::vector<std::uint8_t>> encode(const json::Value& msg) {
   out[2] = static_cast<std::uint8_t>(len >> 16);
   out[3] = static_cast<std::uint8_t>(len >> 24);
   for (std::size_t i = 0; i < body.size(); ++i) out[4 + i] = static_cast<std::uint8_t>(body[i]);
-  return Result<std::vector<std::uint8_t>>::ok(std::move(out));
+  return Result<std::vector<std::uint8_t>>::success(std::move(out));
 }
 
 Result<json::Value> decode(const std::uint8_t* data, std::size_t len) {

@@ -157,7 +157,7 @@ Result<ExportSummary> parseExports(const std::uint8_t* data, std::size_t len) {
 
   std::uint32_t expRva = 0, expSize = 0;
   dir(0, expRva, expSize);
-  if (expRva == 0 || expSize == 0) return Result<ExportSummary>::ok(std::move(out));
+  if (expRva == 0 || expSize == 0) return Result<ExportSummary>::success(std::move(out));
 
   std::size_t expOff = 0;
   if (!rvaToOffset(secs, expRva, len, expOff))
@@ -174,7 +174,7 @@ Result<ExportSummary> parseExports(const std::uint8_t* data, std::size_t len) {
   readU32(data, len, expOff + 36, addrOrdinals);
   if (numFuncs > kMaxExports || numNames > kMaxExports)
     return Result<ExportSummary>::fail(Error::make("pe", 12, "export table over cap"));
-  if (numFuncs == 0) return Result<ExportSummary>::ok(std::move(out));
+  if (numFuncs == 0) return Result<ExportSummary>::success(std::move(out));
   if (numNames > numFuncs)
     return Result<ExportSummary>::fail(Error::make("pe", 12, "more names than functions"));
 
@@ -195,7 +195,7 @@ Result<ExportSummary> parseExports(const std::uint8_t* data, std::size_t len) {
       break;
     funcs.push_back(v);
   }
-  if (funcs.size() != numFuncs) return Result<ExportSummary>::ok(std::move(out));
+  if (funcs.size() != numFuncs) return Result<ExportSummary>::success(std::move(out));
 
   std::vector<bool> named(funcs.size(), false);
   // Named exports.
@@ -246,7 +246,7 @@ Result<ExportSummary> parseExports(const std::uint8_t* data, std::size_t len) {
     }
     out.exports.push_back(std::move(row));
   }
-  return Result<ExportSummary>::ok(std::move(out));
+  return Result<ExportSummary>::success(std::move(out));
 }
 
 }  // namespace pe

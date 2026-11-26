@@ -53,7 +53,7 @@ Result<void> ensureOutsideRepo(const std::string& path) {
     }
     if (!a.has_parent_path() || a == a.parent_path()) break;
   }
-  return Result<void>::ok();
+  return Result<void>::success();
 }
 
 }  // namespace fs

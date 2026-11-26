@@ -45,7 +45,7 @@ Result<std::vector<std::uint8_t>> ShaderCache::getOrTranslate(
     auto hit = load(key);
     if (hit.ok()) {
       ++counters.hits;
-      return Result<std::vector<std::uint8_t>>::ok(hit.value().payload);
+      return Result<std::vector<std::uint8_t>>::success(hit.value().payload);
     }
     // Corrupt entries are already removed by load(); anything else is a
     // plain miss. Either way, translate once (second attempt only reruns
@@ -102,7 +102,7 @@ Result<Entry> ShaderCache::load(const std::string& key) {
     return Result<Entry>::fail(Error::make("cache", 6, "payload hash mismatch, entry discarded"));
   }
   Entry e{key, std::vector<std::uint8_t>(raw.begin() + 12, raw.begin() + 12 + len)};
-  return Result<Entry>::ok(std::move(e));
+  return Result<Entry>::success(std::move(e));
 }
 
 Result<void> ShaderCache::store(const std::string& key, const std::vector<std::uint8_t>& payload) {
@@ -131,7 +131,7 @@ Result<void> ShaderCache::store(const std::string& key, const std::vector<std::u
   std::ofstream f(p, std::ios::binary | std::ios::trunc);
   if (!f) return Result<void>::fail(Error::make("cache", 9, "cannot write cache entry"));
   f.write(reinterpret_cast<const char*>(raw.data()), static_cast<std::streamsize>(raw.size()));
-  return f ? Result<void>::ok()
+  return f ? Result<void>::success()
            : Result<void>::fail(Error::make("cache", 9, "cannot write cache entry"));
 }
 
@@ -145,7 +145,7 @@ Result<void> ShaderCache::clear() {
     }
   }
   (void)removed;
-  return Result<void>::ok();
+  return Result<void>::success();
 }
 
 Result<void> ShaderCache::stats(std::size_t& entries, std::size_t& bytes) {
@@ -158,7 +158,7 @@ Result<void> ShaderCache::stats(std::size_t& entries, std::size_t& bytes) {
       bytes += e.file_size(ec);
     }
   }
-  return Result<void>::ok();
+  return Result<void>::success();
 }
 
 }  // namespace cache

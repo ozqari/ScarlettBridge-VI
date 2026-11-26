@@ -1,6 +1,12 @@
 #pragma once
 // Explicit error/result plumbing. No exceptions cross module boundaries.
+//
+// NOTE: the success factory is named `success` (not `ok`) because MSVC
+// rejects a static and a non-static member with the same parameter list
+// (C2686). Formerly `Result<void>::ok()` vs `bool ok() const` was exactly
+// that clash, and it poisoned every TU including this header.
 #include <string>
+#include <type_traits>
 #include <utility>
 
 namespace sb {
@@ -17,17 +23,23 @@ struct Error {
 template <typename T>
 class Result {
  public:
-  static Result ok(T v) { return Result(true, std::move(v), Error{}); }
+  static Result success(T v) { return Result(true, std::move(v), Error{}); }
   static Result fail(Error e) { return Result(false, T{}, std::move(e)); }
   bool ok() const { return ok_; }
   const T& value() const { return value_; }
   T& value() { return value_; }
   const Error& error() const { return err_; }
   template <typename F>
-  auto map(F&& f) -> Result<decltype(f(value_))> {
-    using U = decltype(f(value_));
+  auto map(F&& f)
+      -> Result<std::decay_t<decltype(std::declval<F>()(std::declval<T&>()))>> {
+    using U = std::decay_t<decltype(std::declval<F>()(std::declval<T&>()))>;
     if (!ok_) return Result<U>::fail(err_);
-    return Result<U>::ok(f(value_));
+    if constexpr (std::is_void_v<U>) {
+      f(value_);
+      return Result<U>::success();
+    } else {
+      return Result<U>::success(f(value_));
+    }
   }
  private:
   Result(bool o, T v, Error e) : ok_(o), value_(std::move(v)), err_(std::move(e)) {}
@@ -39,7 +51,7 @@ class Result {
 template <>
 class Result<void> {
  public:
-  static Result ok() { return Result(true, Error{}); }
+  static Result success() { return Result(true, Error{}); }
   static Result fail(Error e) { return Result(false, std::move(e)); }
   bool ok() const { return ok_; }
   const Error& error() const { return err_; }

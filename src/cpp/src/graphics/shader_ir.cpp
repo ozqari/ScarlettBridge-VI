@@ -81,7 +81,7 @@ Result<Program> parseText(const std::string& text) {
     if (p.code.size() > 256)
       return Result<Program>::fail(Error::make("shader", 7, "program over 256-instruction cap"));
   }
-  return Result<Program>::ok(std::move(p));
+  return Result<Program>::success(std::move(p));
 }
 
 Result<void> verify(const Program& p) {
@@ -115,7 +115,7 @@ Result<void> verify(const Program& p) {
   }
   if (!outWritten)
     return Result<void>::fail(Error::make("shader", 16, "OUT is never written"));
-  return Result<void>::ok();
+  return Result<void>::success();
 }
 
 Result<std::array<float, 4>> interpret(const Program& p, const std::array<float, 4>& in) {
@@ -139,7 +139,7 @@ Result<std::array<float, 4>> interpret(const Program& p, const std::array<float,
         break;
     }
   }
-  return Result<std::array<float, 4>>::ok(regs[kOut]);
+  return Result<std::array<float, 4>>::success(regs[kOut]);
 }
 
 }  // namespace sbvs

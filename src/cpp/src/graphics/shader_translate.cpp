@@ -90,7 +90,7 @@ Result<Translation> translate(const sbvs::Program& program, bool debugLayer) {
 #else
   t.warnings.push_back("D3DCompile validation skipped: non-Windows build");
 #endif
-  return Result<Translation>::ok(std::move(t));
+  return Result<Translation>::success(std::move(t));
 }
 
 Result<Translation> translateText(const std::string& text, bool debugLayer) {

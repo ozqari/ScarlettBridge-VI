@@ -45,13 +45,13 @@ Result<ComPtr<ID3DBlob>> compile(const char* src, const char* target, const char
         Error::make("graphics/d3d12", 10, "shader compile failed (" + std::string(target) +
                                             "): " + log));
   }
-  return Result<ComPtr<ID3DBlob>>::ok(code);
+  return Result<ComPtr<ID3DBlob>>::success(code);
 }
 }  // namespace
 
 Result<IGraphicsBackend*> d3d12Backend() {
   static D3D12Backend instance;
-  return Result<IGraphicsBackend*>::ok(&instance);
+  return Result<IGraphicsBackend*>::success(&instance);
 }
 
 Result<std::vector<AdapterInfo>> D3D12Backend::enumerateAdapters(bool includeSoftware) {
@@ -88,7 +88,7 @@ Result<std::vector<AdapterInfo>> D3D12Backend::enumerateAdapters(bool includeSof
   if (out.empty())
     return Result<std::vector<AdapterInfo>>::fail(
         Error::make("graphics/d3d12", 2, "no DXGI adapters found"));
-  return Result<std::vector<AdapterInfo>>::ok(std::move(out));
+  return Result<std::vector<AdapterInfo>>::success(std::move(out));
 }
 
 // Device + smoke-test objects live for the process; teardown is explicit.
@@ -146,7 +146,7 @@ Result<void> D3D12Backend::createDevice(int adapterIndex, bool debugLayer, bool 
   if (!g_fenceEvent)
     return Result<void>::fail(Error::make("graphics/d3d12", 6, "fence event failed"));
   deviceReady_ = true;
-  return Result<void>::ok();
+  return Result<void>::success();
 }
 
 Result<SmokeReport> D3D12Backend::smokeTriangle() {
@@ -311,7 +311,7 @@ Result<SmokeReport> D3D12Backend::smokeTriangle() {
     rep.warnings.push_back("device removed: " + removed);
     log::warn("graphics", "D3D12 device removed: " + removed);
   }
-  return Result<SmokeReport>::ok(rep);
+  return Result<SmokeReport>::success(rep);
 }
 
 Result<void> D3D12Backend::createSwapchain(int, int, bool) {

@@ -24,7 +24,7 @@ Result<std::vector<std::uint8_t>> readExact(HANDLE h, std::size_t n) {
           Error::make("ipc", 20, "pipe read failed, error " + std::to_string(GetLastError())));
     done += got;
   }
-  return Result<std::vector<std::uint8_t>>::ok(std::move(buf));
+  return Result<std::vector<std::uint8_t>>::success(std::move(buf));
 }
 Result<void> writeExact(HANDLE h, const std::uint8_t* p, std::size_t n) {
   std::size_t done = 0;
@@ -35,7 +35,7 @@ Result<void> writeExact(HANDLE h, const std::uint8_t* p, std::size_t n) {
           Error::make("ipc", 21, "pipe write failed, error " + std::to_string(GetLastError())));
     done += put;
   }
-  return Result<void>::ok();
+  return Result<void>::success();
 }
 }  // namespace
 
@@ -57,7 +57,7 @@ Result<void> PipeServer::create(const std::string& pipeName) {
     return Result<void>::fail(Error::make(
         "ipc", 24, "CreateNamedPipe failed, error " + std::to_string(GetLastError())));
   handle_ = h;
-  return Result<void>::ok();
+  return Result<void>::success();
 }
 
 Result<void> PipeServer::accept() {
@@ -65,7 +65,7 @@ Result<void> PipeServer::accept() {
   if (!ConnectNamedPipe(handle_, nullptr) && GetLastError() != ERROR_PIPE_CONNECTED)
     return Result<void>::fail(Error::make(
         "ipc", 26, "client accept failed, error " + std::to_string(GetLastError())));
-  return Result<void>::ok();
+  return Result<void>::success();
 }
 
 Result<bool> PipeServer::acceptWithTimeout(unsigned ms) {
@@ -76,7 +76,7 @@ Result<bool> PipeServer::acceptWithTimeout(unsigned ms) {
     return Result<bool>::fail(Error::make("ipc", 36, "accept event failed"));
   BOOL ok = ConnectNamedPipe(handle_, &ov);
   bool connected = false;
-  Result<bool> out = Result<bool>::ok(false);
+  Result<bool> out = Result<bool>::success(false);
   if (ok) {
     connected = true;  // completed synchronously (rare)
   } else {
@@ -103,7 +103,7 @@ Result<bool> PipeServer::acceptWithTimeout(unsigned ms) {
     }
   }
   CloseHandle(ov.hEvent);
-  if (out.ok() && connected) return Result<bool>::ok(true);
+  if (out.ok() && connected) return Result<bool>::success(true);
   return out;
 }
 
@@ -130,7 +130,7 @@ Result<std::vector<std::uint8_t>> PipeServer::readFrame() {
   std::vector<std::uint8_t> frame(4 + bodyLen);
   for (int i = 0; i < 4; ++i) frame[i] = d[i];
   for (std::size_t i = 0; i < bodyLen; ++i) frame[4 + i] = body.value()[i];
-  return Result<std::vector<std::uint8_t>>::ok(std::move(frame));
+  return Result<std::vector<std::uint8_t>>::success(std::move(frame));
 }
 
 void PipeServer::close() {
@@ -152,7 +152,7 @@ Result<void> PipeClient::connect(const std::string& pipeName) {
     return Result<void>::fail(Error::make(
         "ipc", 33, "pipe open failed, error " + std::to_string(GetLastError())));
   handle_ = h;
-  return Result<void>::ok();
+  return Result<void>::success();
 }
 
 Result<void> PipeClient::writeFrame(const std::vector<std::uint8_t>& frame) {
@@ -177,7 +177,7 @@ Result<std::vector<std::uint8_t>> PipeClient::readFrame() {
   std::vector<std::uint8_t> frame(4 + bodyLen);
   for (int i = 0; i < 4; ++i) frame[i] = d[i];
   for (std::size_t i = 0; i < bodyLen; ++i) frame[4 + i] = body.value()[i];
-  return Result<std::vector<std::uint8_t>>::ok(std::move(frame));
+  return Result<std::vector<std::uint8_t>>::success(std::move(frame));
 }
 
 void PipeClient::close() {
