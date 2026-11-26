@@ -1,0 +1,6 @@
+{
+  "name": "scarlettbridge",
+  "version": "0.1.0",
+  "description": "ScarlettBridge C++ runtime/UI skeleton. Core intentionally has zero third-party source dependencies (see THIRD_PARTY_NOTICES.md); Qt6 is consumed from a system install, not vcpkg.",
+  "dependencies": []
+}

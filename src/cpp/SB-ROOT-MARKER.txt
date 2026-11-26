@@ -1,0 +1,5 @@
+// ScarlettBridge source-tree marker. If a tool is about to write
+// game-derived data (shader caches, probe reports, crash dumps, converted
+// assets) under a directory containing this file, it must refuse: derived
+// data stays outside the repository. Source-built fixtures and code are the
+// only things that belong in-tree.
