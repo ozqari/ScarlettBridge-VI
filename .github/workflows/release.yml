@@ -1,0 +1,253 @@
+name: release
+
+# Automatic Windows x64 release for the ScarlettBridge C++ tree.
+#
+# INSTALL: this file lives at src/tools/github-release/release.yml in the
+# workspace because src/ forbids dot-directories. To enable it, copy it to
+# .github/workflows/release.yml at the GitHub repo root (or run enable.ps1
+# next to it). From then on:
+#
+# - Push a tag like `v0.2.0` (or `v0.2.0-rc1` for a pre-release) and this
+#   workflow builds, tests, packages and publishes a GitHub Release.
+# - `workflow_dispatch` builds + tests + uploads the same artifacts without
+#   publishing a release (use it to dry-run the pipeline).
+#
+# What it does, in order: clean checkout → VS2022 x64 env → CMake/Ninja check
+# → Qt 6 (Widgets) install → vcpkg toolchain check → `cmake --preset ci`
+# (warnings-as-errors, no Qt) → build → `ctest --preset ci` (CPU-only
+# sb_tests; the build stops here on failure, nothing is packaged) →
+# `cmake --preset release` (Qt UI when found, skipped gracefully otherwise)
+# → license/provenance gate → stage + hash + zip → upload artifacts →
+# publish release (tag builds only).
+#
+# Boundaries (same as the repo): bring-your-own-readable-files only. The
+# package must contain no game content, keys, SDK material, dumps or
+# playability claims — the gate step fails the run if forbidden names or
+# extensions appear in the staging dir. See STATUS_EVIDENCE.md (never quote
+# upstream self-reports as our verification).
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version label for the artifact name (e.g. 0.1.0-dev)"
+        required: false
+        default: "0.1.0-dev"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CPP_DIR: src/cpp
+  QT_VERSION: "6.8.2"
+
+jobs:
+  build-test-package:
+    name: Build, test and package (Windows x64)
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Visual Studio 2022 (x64)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Verify CMake and Ninja
+        run: |
+          cmake --version
+          ninja --version
+
+      - name: Install Qt 6 (Widgets)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: win64_msvc2022_64
+          cache: true
+
+      - name: Ensure vcpkg toolchain path
+        run: |
+          if (-not $env:VCPKG_ROOT -or -not (Test-Path "$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake")) {
+            if ($env:VCPKG_INSTALLATION_ROOT -and (Test-Path "$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake")) {
+              "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+              Write-Host "VCPKG_ROOT fell back to VCPKG_INSTALLATION_ROOT"
+            } else {
+              Write-Error "vcpkg toolchain not found (VCPKG_ROOT and VCPKG_INSTALLATION_ROOT both unusable)"
+              exit 1
+            }
+          } else {
+            Write-Host "VCPKG_ROOT=$env:VCPKG_ROOT"
+          }
+
+      - name: Resolve version label
+        id: version
+        run: |
+          if ("${{ github.ref_type }}" -eq "tag") {
+            $v = "${{ github.ref_name }}" -replace '^v', ''
+          } elseif ("${{ inputs.version }}") {
+            $v = "${{ inputs.version }}"
+          } else {
+            $v = "0.1.0-dev"
+          }
+          if (-not $v) { $v = "0.1.0-dev" }
+          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "version=$v"
+
+      - name: Configure (ci preset — warnings as errors, no Qt)
+        working-directory: ${{ env.CPP_DIR }}
+        run: cmake --preset ci
+
+      - name: Build (ci)
+        working-directory: ${{ env.CPP_DIR }}
+        run: cmake --build --preset ci
+
+      - name: Test (ci — CPU-only unit suite)
+        working-directory: ${{ env.CPP_DIR }}
+        run: ctest --preset ci --output-on-failure
+
+      - name: Configure (release preset — Qt UI when found)
+        working-directory: ${{ env.CPP_DIR }}
+        run: cmake --preset release
+
+      - name: Build (release)
+        working-directory: ${{ env.CPP_DIR }}
+        run: cmake --build --preset release
+
+      - name: License and provenance gate
+        run: |
+          $cpp = "${{ env.CPP_DIR }}"
+          foreach ($f in @("$cpp/LICENSE", "$cpp/THIRD_PARTY_NOTICES.md", "src/docs/SOURCE_PROVENANCE.csv")) {
+            if (-not (Test-Path $f)) { Write-Error "missing required file: $f"; exit 1 }
+          }
+          if ((Get-Item "$cpp/THIRD_PARTY_NOTICES.md").Length -eq 0) {
+            Write-Error "THIRD_PARTY_NOTICES.md is empty"
+            exit 1
+          }
+          Write-Host "license/provenance gate passed"
+
+      - name: Package Windows x64 artifacts
+        id: package
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          $cpp = "${{ env.CPP_DIR }}"
+          $rel = "$cpp/build/release"
+          $stage = "dist/scarlettbridge-$version-windows-x64"
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+
+          $binaries = @(
+            "scarlettbridge-runtime.exe",
+            "scarlettbridge-cli.exe",
+            "sb_gpu_probe.exe",
+            "sb_shader_probe.exe",
+            "sb_fixture_builder.exe",
+            "sb_cache_inspector.exe",
+            "sb_tests.exe"
+          )
+          $missing = @()
+          foreach ($b in $binaries) {
+            $src = Join-Path $rel $b
+            if (Test-Path $src) { Copy-Item $src $stage } else { $missing += $b }
+          }
+          if ($missing.Count -gt 0) {
+            Write-Error ("missing required binaries: " + ($missing -join ", "))
+            exit 1
+          }
+          $ui = Join-Path $rel "scarlettbridge-ui.exe"
+          if (Test-Path $ui) {
+            Copy-Item $ui $stage
+            $uiNote = "scarlettbridge-ui.exe included (Qt ${{ env.QT_VERSION }})"
+          } else {
+            $uiNote = "scarlettbridge-ui.exe absent (Qt not found; core/runtime/tools/tests still shipped)"
+          }
+          Write-Host $uiNote
+
+          Copy-Item "$cpp/LICENSE" (Join-Path $stage "LICENSE.txt")
+          Copy-Item "$cpp/THIRD_PARTY_NOTICES.md" $stage
+          Copy-Item "$cpp/README.md" (Join-Path $stage "README-cpp.md")
+          Copy-Item "$cpp/config/default-settings.json" $stage
+          Copy-Item "src/docs/CHANGELOG.md" $stage
+          Copy-Item "src/docs/STATUS_EVIDENCE.md" $stage
+          Copy-Item "src/docs/BUILDING.md" $stage
+
+          $bad = Get-ChildItem -Recurse -Path $stage | Where-Object {
+            $_.Extension -in @('.rpf', '.xex', '.pkg', '.pck') -or
+            $_.Name -match 'game_scarlett|xgameruntime\.lib|decrypt|keygen'
+          }
+          if ($bad) {
+            $bad | ForEach-Object { Write-Host ("forbidden file in package: " + $_.FullName) }
+            Write-Error "forbidden files in package (no game content, keys or SDK material ship)"
+            exit 1
+          }
+
+          @(
+            "scarlettbridge $version (windows-x64)",
+            "tag: ${{ github.ref_name }}",
+            "commit: ${{ github.sha }}",
+            "run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            "date (utc): $(Get-Date -AsUTC -Format o)",
+            "runner: windows-2022 / VS2022 x64 / CMake + Ninja",
+            "qt: $uiNote",
+            "tests: ctest --preset ci (CPU-only sb_tests) passed before packaging",
+            "note: no game content, keys, SDK material, dumps or playability claims are shipped (see STATUS_EVIDENCE.md)"
+          ) | Out-File -FilePath (Join-Path $stage "build-info.txt") -Encoding utf8
+
+          $zip = "dist/scarlettbridge-$version-windows-x64.zip"
+          Compress-Archive -Path "$stage/*" -DestinationPath $zip -Force
+          $h = (Get-FileHash -Path $zip -Algorithm SHA256).Hash.ToLower()
+          "$h  $(Split-Path $zip -Leaf)" | Out-File -FilePath "dist/SHA256SUMS.txt" -Encoding utf8
+          Copy-Item (Join-Path $stage "build-info.txt") "dist/build-info.txt"
+          "zip=$zip" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "packaged $zip ($h)"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: scarlettbridge-${{ steps.version.outputs.version }}-windows-x64
+          path: |
+            dist/*.zip
+            dist/SHA256SUMS.txt
+            dist/build-info.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Create GitHub Release (tag builds only)
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.zip
+            dist/SHA256SUMS.txt
+            dist/build-info.txt
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          body: |
+            Automated Windows x64 build (VS2022, CMake `release` preset).
+
+            Verify the download before running anything:
+            `certutil -hashfile scarlettbridge-<version>-windows-x64.zip SHA256`
+            and compare with `SHA256SUMS.txt`.
+
+            Contents: `scarlettbridge-runtime.exe`, `scarlettbridge-cli.exe`,
+            `sb_*` tools, `sb_tests.exe`, `scarlettbridge-ui.exe` when Qt was
+            available, plus `LICENSE.txt`, `THIRD_PARTY_NOTICES.md`,
+            `default-settings.json`, `CHANGELOG.md`, `STATUS_EVIDENCE.md`,
+            `BUILDING.md` and `build-info.txt`.
+
+            No game content, keys, SDK material, dumps or playability claims
+            are shipped. Anything not listed in `STATUS_EVIDENCE.md` section A
+            as verified is not verified — upstream self-reports in section B
+            are never our verification.
