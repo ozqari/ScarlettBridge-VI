@@ -991,7 +991,7 @@ int main() {
     CacheCounters c;
     auto key = sb::cache::cacheKeyV2(fp, "d3d12-test", "container1");
     auto miss = cache.getOrTranslate(
-        key, [] { return sb::Result<std::vector<std::uint8_t>>::ok(std::vector<std::uint8_t>{1, 2, 3}); }, c);
+        key, [] { return sb::Result<std::vector<std::uint8_t>>::success(std::vector<std::uint8_t>{1, 2, 3}); }, c);
     check(miss.ok() && c.misses == 1, "cachev2.miss-translates");
     auto hit = cache.getOrTranslate(
         key, [] {
